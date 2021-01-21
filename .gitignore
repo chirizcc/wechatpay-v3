@@ -4,3 +4,6 @@
 out
 gen
 .DS_Store
+*.pem
+*.log
+*_test.go
