@@ -32,6 +32,7 @@ func newLoggedTransport(rt http.RoundTripper, log logger) http.RoundTripper {
 
 // logger 日志接口，可自己实现日志记录
 type logger interface {
+	// record 记录日志
 	record(req *http.Request, resp *http.Response, err error, duration time.Duration)
 }
 

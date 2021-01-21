@@ -7,17 +7,23 @@ import (
 	"sync"
 )
 
+// CertificateDriver 证书中控存放驱动
 type CertificateDriver interface {
-	Get(serialNumber string) (*x509.Certificate, error)
-	Set(serialNumber string, pemData []byte) error
-	Count() int
+	// 	get 根据序列号获取证书
+	get(serialNumber string) (*x509.Certificate, error)
+
+	// set 根据序列号设置证书
+	set(serialNumber string, pemData []byte) error
+
+	// count 获取证书数量
+	count() int
 }
 
 type MemoryDriver struct {
 	certs sync.Map
 }
 
-func (m *MemoryDriver) Get(serialNumber string) (*x509.Certificate, error) {
+func (m *MemoryDriver) get(serialNumber string) (*x509.Certificate, error) {
 	cert, ok := m.certs.Load(serialNumber)
 	if !ok {
 		return nil, errors.New("cert not exists")
@@ -31,7 +37,7 @@ func (m *MemoryDriver) Get(serialNumber string) (*x509.Certificate, error) {
 	return c, nil
 }
 
-func (m *MemoryDriver) Set(serialNumber string, pemData []byte) error {
+func (m *MemoryDriver) set(serialNumber string, pemData []byte) error {
 	block, _ := pem.Decode(pemData)
 	if block == nil || block.Type != "CERTIFICATE" {
 		return errors.New("failed to decode PEM block containing certificate")
@@ -46,7 +52,7 @@ func (m *MemoryDriver) Set(serialNumber string, pemData []byte) error {
 	return nil
 }
 
-func (m *MemoryDriver) Count() int {
+func (m *MemoryDriver) count() int {
 	count := 0
 
 	m.certs.Range(func(k, v interface{}) bool {

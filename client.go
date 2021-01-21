@@ -39,6 +39,7 @@ type Client struct {
 	httpClient http.Client
 }
 
+// New 获取新实例
 func New(mchId string, apiKey string, logger logger) (*Client, error) {
 	client := &Client{}
 	client.mchId = mchId
@@ -53,6 +54,7 @@ func New(mchId string, apiKey string, logger logger) (*Client, error) {
 	return client, nil
 }
 
+// LoadCertCentral 加载微信证书中控
 func (c *Client) LoadCertCentral(driver CertificateDriver, pemDataArr [][]byte) error {
 	if c.merchantPrivateKey == nil || c.merchantSerialNumber == "" { // 需先加载商户私钥
 		return errors.New("please perform LoadMerchantPrivateKey")
@@ -69,6 +71,7 @@ func (c *Client) LoadCertCentral(driver CertificateDriver, pemDataArr [][]byte) 
 	return nil
 }
 
+// LoadMerchantPrivateKeyFromFile 加载商户私钥
 func (c *Client) LoadMerchantPrivateKeyFromFile(filePath string, serialNumber string) error {
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -78,6 +81,7 @@ func (c *Client) LoadMerchantPrivateKeyFromFile(filePath string, serialNumber st
 	return c.LoadMerchantPrivateKey(b, serialNumber)
 }
 
+// LoadMerchantPrivateKey 加载商户私钥
 func (c *Client) LoadMerchantPrivateKey(pemData []byte, serialNumber string) error {
 	if serialNumber == "" {
 		return errors.New("merchant serial number is empty")
@@ -104,6 +108,7 @@ func (c *Client) LoadMerchantPrivateKey(pemData []byte, serialNumber string) err
 	return nil
 }
 
+// DoRequest 发送请求
 func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) error {
 	var (
 		err           error
@@ -207,6 +212,7 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 	return nil
 }
 
+// AesDecrypt 解密
 func (c *Client) AesDecrypt(crypted string, nonce string, additionalData string) ([]byte, error) {
 	s, err := base64.StdEncoding.DecodeString(crypted)
 	if err != nil {
@@ -231,6 +237,7 @@ func (c *Client) AesDecrypt(crypted string, nonce string, additionalData string)
 	return plaintext, nil
 }
 
+// sign 签名
 func (c *Client) sign(data []byte) string {
 	hash := sha256.New()
 	hash.Write(data)
@@ -242,6 +249,7 @@ func (c *Client) sign(data []byte) string {
 	return base64.StdEncoding.EncodeToString(encryptedData)
 }
 
+// getToken
 func (c *Client) getToken(method string, uri *url.URL, body []byte) string {
 	nonce := getNonce()
 	timestamp := time.Now().Unix()
@@ -260,6 +268,7 @@ func (c *Client) getToken(method string, uri *url.URL, body []byte) string {
 	)
 }
 
+// validate 验签
 func (c *Client) validate(timestamp string, nonce string, serial string, sign string, body []byte) bool {
 	message := c.buildMessage(timestamp, nonce, body)
 
@@ -282,6 +291,7 @@ func (c *Client) validate(timestamp string, nonce string, serial string, sign st
 	return false
 }
 
+// buildMessage
 func (c *Client) buildMessage(fields ...interface{}) []byte {
 	var buffer bytes.Buffer
 

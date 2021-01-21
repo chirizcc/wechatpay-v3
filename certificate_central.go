@@ -9,12 +9,14 @@ import (
 	"time"
 )
 
+// Central 微信平台证书中控
 type Central struct {
 	client *Client
-	driver CertificateDriver
-	skip   bool
+	driver CertificateDriver // 中控驱动，用于存放证书
+	skip   bool              // 是否跳过验签
 }
 
+// newCentral 获取中控实例
 func newCentral(client *Client, driver CertificateDriver, pemDataArr [][]byte) (*Central, error) {
 	c := &Central{
 		client: client,
@@ -31,9 +33,10 @@ func newCentral(client *Client, driver CertificateDriver, pemDataArr [][]byte) (
 	return c, nil
 }
 
+// start 开启定时任务更新微信平台证书
 func (c *Central) start() {
 	// 初次执行无任何平台证书时跳过验签，不推荐在生产环境使用
-	if c.driver.Count() == 0 {
+	if c.driver.count() == 0 {
 		c.skip = true
 	}
 
@@ -53,14 +56,17 @@ func (c *Central) start() {
 	}()
 }
 
+// getCert 根据序列号获取证书
 func (c *Central) getCert(serialNumber string) (*x509.Certificate, error) {
-	return c.driver.Get(serialNumber)
+	return c.driver.get(serialNumber)
 }
 
+// skipValidate 跳过验签
 func (c *Central) skipValidate() bool {
 	return c.skip
 }
 
+// loadCert 加载证书存入驱动中
 func (c *Central) loadCert(pemData []byte) error {
 	block, _ := pem.Decode(pemData)
 	if block == nil || block.Type != "CERTIFICATE" {
@@ -74,13 +80,14 @@ func (c *Central) loadCert(pemData []byte) error {
 
 	serialNumber := strings.ToUpper(hex.EncodeToString(cert.SerialNumber.Bytes()))
 
-	if err = c.driver.Set(serialNumber, pemData); err != nil {
+	if err = c.driver.set(serialNumber, pemData); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// updateCerts 从接口获取并更新证书
 func (c *Central) updateCerts() {
 	result := &CertificatesResult{}
 	if err := c.client.DoRequest("GET", "/v3/certificates", result); err != nil {
@@ -95,7 +102,7 @@ func (c *Central) updateCerts() {
 			continue
 		}
 
-		if err = c.driver.Set(v.SerialNo, pemData); err != nil {
+		if err = c.driver.set(v.SerialNo, pemData); err != nil {
 			// @TODO 错误处理
 			continue
 		}
