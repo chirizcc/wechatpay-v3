@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"math/big"
+	"unsafe"
 )
 
 func getNonce() string {
@@ -19,4 +20,9 @@ func getNonce() string {
 		container += string(str[randomInt.Int64()])
 	}
 	return container
+}
+
+// byte2String 将 byte 数组转换为字符串
+func byte2String(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

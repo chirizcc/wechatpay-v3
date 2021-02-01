@@ -49,12 +49,12 @@ func (f *FileLogger) record(req *http.Request, resp *http.Response, err error, d
 
 	var reqData []byte
 	if req.Body != nil {
-		reqBode, err := req.GetBody()
+		reqBody, err := req.GetBody()
 		if err != nil {
 			return
 		}
 
-		reqData, err = ioutil.ReadAll(reqBode)
+		reqData, err = ioutil.ReadAll(reqBody)
 		if err != nil {
 			return
 		}

@@ -1,11 +1,53 @@
 package wechatpay
 
+import (
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
 type QueryParam interface {
 	Params(client *Client) map[string]interface{}
 }
 
 type BodyParam interface {
 	Params(client *Client) BodyParam
+}
+
+func NewFileParam(file *os.File) (*FileParam, error) {
+	fileData, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FileParam{
+		fileName: file.Name(),
+		fileData: fileData,
+	}, nil
+}
+
+type FileParam struct {
+	fileName string
+	fileData []byte
+}
+
+func (f *FileParam) meta() []byte {
+	h := sha256.New()
+	h.Write(f.fileData)
+
+	meta := map[string]string{
+		"filename": f.fileName,
+		"sha256":   fmt.Sprintf("%x", h.Sum(nil)),
+	}
+
+	metaByte, err := json.Marshal(meta)
+	if err != nil {
+		return metaByte
+	}
+
+	return metaByte
 }
 
 type Result interface {

@@ -14,8 +14,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -116,6 +116,7 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 		body          []byte
 		appendHeaders = make(map[string]string)
 		result        Result
+		fileParam     *FileParam
 	)
 
 	for _, v := range vs {
@@ -129,6 +130,9 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 			if err != nil {
 				return nil
 			}
+		case *FileParam:
+			body = vv.meta()
+			fileParam = vv
 		case Result:
 			result = vv
 		}
@@ -148,9 +152,32 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 		return err
 	}
 
-	var buf io.Reader
-	if len(body) > 0 {
-		buf = bytes.NewReader(body)
+	buf := new(bytes.Buffer)
+	if fileParam != nil {
+		writer := multipart.NewWriter(buf)
+
+		err = writer.WriteField("meta", byte2String(body))
+		if err != nil {
+			return err
+		}
+
+		formFile, err := writer.CreateFormFile("file", fileParam.fileName)
+		if err != nil {
+			return err
+		}
+
+		_, err = formFile.Write(fileParam.fileData)
+		if err != nil {
+			return err
+		}
+
+		_ = writer.Close()
+
+		appendHeaders["Content-Type"] = writer.FormDataContentType()
+	} else if len(body) > 0 {
+		buf = bytes.NewBuffer(body)
+
+		appendHeaders["Content-Type"] = "application/json"
 	}
 
 	req, err := http.NewRequest(method, uri.String(), buf)
@@ -162,7 +189,6 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 		req.Header.Add(key, value)
 	}
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("%s %s", schema, c.getToken(method, uri, body)))
 
 	req.Close = true
