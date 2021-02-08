@@ -19,6 +19,7 @@ type CertificateDriver interface {
 	count() int
 }
 
+// MemoryDriver 内存驱动，使用 sync.Map 存放
 type MemoryDriver struct {
 	certs sync.Map
 }

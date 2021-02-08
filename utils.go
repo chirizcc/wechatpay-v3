@@ -7,6 +7,7 @@ import (
 	"unsafe"
 )
 
+// getNonce 获取随机字符串
 func getNonce() string {
 	l := 32
 

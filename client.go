@@ -214,7 +214,7 @@ func (c *Client) DoRequest(method string, apiUri string, vs ...interface{}) erro
 			return err
 		}
 
-		return errors.New(fmt.Sprintf("request error code: %s; msg: %s", errResult.Code, errResult.Message))
+		return fmt.Errorf("request error code: %s; msg: %s", errResult.Code, errResult.Message)
 	}
 
 	// 验签
